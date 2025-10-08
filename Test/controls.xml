@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<Controls xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <actions>
+    <string>Move_Left</string>
+    <string>Move_Right</string>
+    <string>Move_Down</string>
+    <string>Jump</string>
+    <string>Reload</string>
+    <string>Chat</string>
+    <string>SendChat</string>
+    <string>Pause</string>
+    <string>GrapplingHook</string>
+    <string>Show_Scoreboard</string>
+  </actions>
+  <keys>
+    <Keys>A</Keys>
+    <Keys>D</Keys>
+    <Keys>S</Keys>
+    <Keys>W</Keys>
+    <Keys>R</Keys>
+    <Keys>OemPeriod</Keys>
+    <Keys>Enter</Keys>
+    <Keys>Escape</Keys>
+    <Keys>F</Keys>
+    <Keys>Tab</Keys>
+  </keys>
+</Controls>

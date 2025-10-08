@@ -1,0 +1,20 @@
+#Name of your server, will be shown in the server list.
+name Vexillum Server
+#The port number that the server should run on (must be accessible from the Internet.)
+port 24224
+#Maximum number of players
+maxplayers 12
+#Default weapons
+weapons RocketLauncher SMG Sword
+#Captures needed to win
+maxcaptures 4
+#Time to respawn in milliseconds
+respawntime 5000
+#Should the server verify usernames with playvexillum.com? Recommended if it will be open to the Internet
+verifynames true
+#Should the server be displayed in the server list?
+public true
+#List of maps for the server
+maps bases complex
+#Maximum number of bots used to fill the server widh players
+maxbots 6

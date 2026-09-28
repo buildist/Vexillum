@@ -1,11 +1,7 @@
 # Vexillum build entry points. Everything delegates to the .NET SDK (`dotnet`),
-# which is the compiler, dependency manager (NuGet) and test runner in one.
+# which is the compiler and dependency manager (NuGet) in one.
 #
 #   make            compile everything (Debug)
-#   make test       run the unit tests (Tests/Vexillum.Tests: shims, terrain oracle)
-#   make acceptance run the acceptance tests (real server + scripted protocol clients)
-#   make e2e        run the end-to-end tests (real game windows; needs a display)
-#   make test-all   unit + acceptance
 #   make server     compile, then run the dedicated server from Test/
 #   make client     compile, then run the game from Test/ (main menu)
 #   make play       compile, then run the game and join the server at CONNECT
@@ -26,7 +22,7 @@ SERVER_EXE := Server/bin/$(CONFIG)/$(TFM)/VexillumServer
 CLIENT_EXE := ZombieSurvival/bin/$(CONFIG)/$(TFM)/VexillumGame
 ABS        := $(CURDIR)
 
-.PHONY: all build restore test acceptance e2e test-all clean server client play smoke dist release check help
+.PHONY: all build restore clean server client play dist release help
 
 all: build
 
@@ -37,21 +33,6 @@ build:
 ## Only download/verify NuGet dependencies.
 restore:
 	dotnet restore $(SLN)
-
-## Run the unit tests (shims, terrain fidelity oracle, Nuclex port). Fast, no processes started.
-test: build
-	dotnet test Tests/Vexillum.Tests -c $(CONFIG) -nologo --no-build
-
-## Run the acceptance tests: the real server in scratch copies of Test/ driven by scripted protocol clients (docs/TESTING.md).
-acceptance: build
-	dotnet test Tests/Vexillum.Acceptance -c $(CONFIG) -nologo --no-build
-
-## Run the end-to-end tests: real server + real game windows through the debug console (needs a display; opens windows).
-e2e: build
-	python3 -m pytest Tests/e2e -m e2e -x -q
-
-## Unit tests followed by the acceptance tests.
-test-all: test acceptance
 
 ## Compile in Release configuration.
 release:

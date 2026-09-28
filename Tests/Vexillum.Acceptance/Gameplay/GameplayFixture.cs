@@ -39,6 +39,28 @@ namespace Vexillum.Acceptance.servergameplay
         public GameplayFixture()
         {
             WaitForServerObject(Server);
+            if (PeacefulBots)
+                ParkBots();
+        }
+
+        /// <summary>
+        /// When true (default), every bot is turned into a spectator as soon
+        /// as it exists, so no test in this fixture is shot, knocked back or
+        /// out-balanced by the AI. Bots keep their team (PlayerClass), so
+        /// team balance and player counts behave as with live bots; they just
+        /// never fight. BotTests use their own fixture with live bots.
+        /// </summary>
+        protected virtual bool PeacefulBots { get { return true; } }
+
+        /// <summary>
+        /// Makes every bot that is not already a spectator one, on the Server
+        /// Main thread (SurvivalGameMode.SetSpectator: drops any flag, class
+        /// Spectator, no respawn since the bot did not die). Returns how many
+        /// were parked.
+        /// </summary>
+        public int ParkBots()
+        {
+            return SyncT<int>("new Func<int>(() => { int n = 0; foreach (ServerPlayer p in ((System.Collections.IEnumerable)Server.players).Cast<ServerPlayer>().ToList()) { if (p.isBot && p.CurrentClass != PlayerClass.Spectator) { Server.gameMode.SetSpectator(p); n++; } } return n; })()");
         }
 
         public DebugConsole Console { get { return Server.Console; } }
@@ -140,6 +162,8 @@ namespace Vexillum.Acceptance.servergameplay
                     c.Dispose();
                     throw;
                 }
+                if (PeacefulBots)
+                    ParkBots();   // UpdateBots may have added a bot for this join
                 return c;
             }
         }

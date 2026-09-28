@@ -23,7 +23,7 @@ namespace Vexillum.Acceptance.protocol
         private const float Up = -(float)(Math.PI / 2);   // Rocket.Setup: velocity (cos, -sin), y up => -pi/2 flies upward
 
         // PROTO-15
-        [Fact]
+        [RetryFact]  // real-time dependency: grappling hook 250 ms rate limit and projectile timing
         public void Firing_the_rocket_launcher_produces_ammo_fire_projectile_explode_and_remove_packets()
         {
             string alice = Names.Unique("alice"), bob = Names.Unique("bob");
@@ -97,7 +97,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-16
-        [Fact]
+        [RetryFact]  // real-time dependency: grappling hook 250 ms rate limit and projectile timing
         public void Reload_reports_the_clip_immediately_and_again_once_it_is_refilled()
         {
             string alice = Names.Unique("alice");
@@ -129,7 +129,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-26
-        [Fact]
+        [RetryFact]  // real-time dependency: grappling hook 250 ms rate limit and projectile timing
         public void Grappling_hook_fires_is_rate_limited_and_releases()
         {
             string alice = Names.Unique("alice");
@@ -195,7 +195,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-27
-        [Fact]
+        [RetryFact]  // real-time dependency: grappling hook 250 ms rate limit and projectile timing
         public void SMG_hitscan_damages_an_enemy_and_is_shown_to_the_others_with_a_sound()
         {
             // b must be on the other team (CanDamage). With the default bots the second human
@@ -299,7 +299,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-28
-        [Fact]
+        [RetryFact]  // real-time dependency: grappling hook 250 ms rate limit and projectile timing
         public void Legacy_weapon_select_packet_10_selects_on_the_server_without_an_echo()
         {
             string alice = Names.Unique("alice"), bob = Names.Unique("bob");

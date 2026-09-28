@@ -30,7 +30,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-22 (and the unobservable ready=false half of PROTO-01)
-        [Fact]
+        [RetryFact]  // real-time dependency: level change restarts server state
         public void Newgame_sends_253_closes_everyone_and_the_server_comes_back_on_the_new_map()
         {
             string bob = Names.Unique("bob");

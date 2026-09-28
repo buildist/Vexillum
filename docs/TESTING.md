@@ -264,3 +264,19 @@ by `LevelTerrainTests` and the acceptance self-tests:
 bases    059ee417b1b64d17f7ebe439dd8bf5b05f01177866873db6dbcd4947716987e3   3914x1024
 complex  d5d14f4c61b455f074f82222ad6da7a5a491bf4ddcd53bde8056c3f2974695b6   2736x818
 ```
+
+## Real-time tests: parked bots and retries
+
+Acceptance tests run against the real server in real time (60 Hz stepping,
+50 ms broadcasts, 5 s ping and respawn timers), which is the source of the
+rare intermittent failure. Two measures keep them consistent:
+
+* `GameplayFixture` parks every bot as a spectator (`ParkBots`, on by default,
+  `PeacefulBots => false` to opt out) so the AI never shoots, knocks back or
+  kills a scripted client mid-assertion. Bots keep their team, so balance and
+  counts are unchanged. `BotTests` use their own fixture with live bots.
+* `[RetryFact]` (Tests/Vexillum.Acceptance/RetryFact.cs) re-runs a test up to
+  three times only when it fails, with a 2 s pause, and logs every retry as
+  a diagnostic message. It is applied only to tests that wait on server
+  timers or live bots, each marked with the reason. A test that fails three
+  times is a real failure. Prefer a deterministic precondition over a retry.

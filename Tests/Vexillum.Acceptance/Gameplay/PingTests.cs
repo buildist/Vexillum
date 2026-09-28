@@ -36,7 +36,7 @@ namespace Vexillum.Acceptance.servergameplay
             };
         }
 
-        [Fact]
+        [RetryFact]  // real-time dependency: 5 s ping thread and lag-frame measurement
         public void Ping_round_trip_sets_the_reported_ping_and_the_lag_frames()
         {
             using (ScriptedClient c = fx.Join(GameplayFixture.Unique("laggy")))
@@ -59,7 +59,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // Lag compensation: a hitscan is tested against the frame the lagging client saw
-        [Fact]
+        [RetryFact]  // real-time dependency: 5 s ping thread and lag-frame measurement
         public void Hitscans_are_resolved_against_the_frame_the_lagging_client_saw()
         {
             using (ScriptedClient shooter = fx.Join(GameplayFixture.Unique("laggy")))

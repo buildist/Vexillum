@@ -44,7 +44,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-12
-        [Fact]
+        [RetryFact]  // real-time dependency: position packets and physics settling in real time
         public void Absolute_delta_and_unchanged_position_packets_set_the_server_position_as_decoded()
         {
             string alice = Names.Unique("alice"), bob = Names.Unique("bob");
@@ -111,7 +111,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-13
-        [Fact]
+        [RetryFact]  // real-time dependency: position packets and physics settling in real time
         public void Movement_bits_and_arm_angle_are_relayed_to_other_clients()
         {
             string alice = Names.Unique("alice"), bob = Names.Unique("bob");

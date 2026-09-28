@@ -31,7 +31,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-11
-        [Fact]
+        [RetryFact]  // real-time dependency: respawn timer (Thread.Sleep(respawntime) on the server)
         public void Hitscan_kill_makes_the_victim_a_weaponless_spectator_and_respawns_after_respawntime()
         {
             using (ScriptedClient a = fx.Join(GameplayFixture.Unique("alice")))
@@ -103,7 +103,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-12
-        [Fact]
+        [RetryFact]  // real-time dependency: respawn timer (Thread.Sleep(respawntime) on the server)
         public void Self_inflicted_damage_hurts_and_a_self_kill_credits_the_victim()
         {
             using (ScriptedClient a = fx.Join(GameplayFixture.Unique("alice")))

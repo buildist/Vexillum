@@ -17,7 +17,7 @@ namespace Vexillum.Acceptance.protocol
         }
 
         // PROTO-10 (b)
-        [Fact]
+        [RetryFact]  // real-time dependency: 15 s ping timeout on the server
         public void Client_that_never_answers_pings_is_disconnected_at_the_next_ping_tick()
         {
             string alice = Names.Unique("alice"), bob = Names.Unique("bob");

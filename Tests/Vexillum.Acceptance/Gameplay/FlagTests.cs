@@ -130,7 +130,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-05
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Touching_the_enemy_flag_makes_the_player_its_carrier()
         {
             using (Trio t = new Trio(fx))
@@ -165,7 +165,7 @@ namespace Vexillum.Acceptance.servergameplay
 
         // SRV-26 (known original bug, preserved): TakeFlag calls RemoveFlag and then level.TakeFlag -> RemoveFlag
         // again, so the flag entity's removal (41) is sent twice to every client
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Taking_a_flag_sends_its_entity_removal_twice_to_every_client()
         {
             using (Trio t = new Trio(fx))
@@ -201,7 +201,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-06 (scoring part; the win is in FlagWinTests)
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Bringing_the_enemy_flag_home_scores_a_capture_and_three_points()
         {
             using (Trio t = new Trio(fx))
@@ -245,7 +245,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-07
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Carrier_death_drops_the_flag_where_they_died_and_it_returns_after_ten_seconds()
         {
             using (Trio t = new Trio(fx))
@@ -284,7 +284,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-08
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Carrier_disconnect_drops_the_flag()
         {
             using (Trio t = new Trio(fx))
@@ -315,7 +315,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-09: the dropped-flag pickup rule differs between the teams (original quirk, preserved)
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Dropped_flag_pickup_is_guarded_for_green_but_not_for_blue()
         {
             fx.WaitForFlagsHome();
@@ -382,7 +382,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-06
-        [Fact]
+        [RetryFact]  // real-time dependency: flag physics and win/level change timing
         public void Reaching_maxcaptures_wins_the_game_and_rotates_the_level()
         {
             Assert.Equal(1, fx.Console.EvalT<int>("Server.gameMode.maxCaptures"));

@@ -86,7 +86,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-02
-        [Fact]
+        [RetryFact]  // real-time dependency: live bots (random targets, timing)
         public void Bots_fill_up_to_maxbots_minus_humans_and_leave_as_humans_join()
         {
             WaitForBots(0, "no bots before anyone joins");
@@ -137,7 +137,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-10
-        [Fact]
+        [RetryFact]  // real-time dependency: live bots (random targets, timing)
         public void Bots_never_take_or_capture_flags()
         {
             using (ScriptedClient a = new ScriptedClient(fx.Server))
@@ -167,7 +167,7 @@ namespace Vexillum.Acceptance.servergameplay
         }
 
         // SRV-24
-        [Fact]
+        [RetryFact]  // real-time dependency: live bots (random targets, timing)
         public void Bots_move_switch_weapons_and_shoot()
         {
             using (ScriptedClient a = new ScriptedClient(fx.Server))

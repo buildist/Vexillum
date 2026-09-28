@@ -26,5 +26,6 @@
     <!-- Built so ServerProcess can start Server/bin/<Config>/net9.0/VexillumServer
          after `dotnet build Tests/Vexillum.Acceptance`; the tests never load it in-process. -->
     <ProjectReference Include="../../Server/Server.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <ProjectReference Include="../../Shims/MasterServer/MasterServer.csproj" />
   </ItemGroup>
 </Project>

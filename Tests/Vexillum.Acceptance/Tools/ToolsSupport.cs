@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using Vexillum.Port.Master;
 using Xunit;
 
 namespace Vexillum.Acceptance.toolsconfig
@@ -14,7 +15,7 @@ namespace Vexillum.Acceptance.toolsconfig
     /// <summary>
     /// Serial collection for the tools/config tests that touch process-wide
     /// state the harness collections do not cover: environment variables
-    /// environment, the
+    /// (VEXILLUM_MASTER/LAN/...), the MasterServer/LanDiscovery statics, the
     /// Steamworks shim statics, ControlSystem/Settings dictionaries, the
     /// Util debug buffer and Console.Out. DisableParallelization keeps it
     /// from running alongside any other collection.
@@ -67,6 +68,74 @@ namespace Vexillum.Acceptance.toolsconfig
     }
 
     /// <summary>Sets environment variables for the scope and restores the old values on dispose.</summary>
+    public sealed class EnvScope : IDisposable
+    {
+        private readonly Dictionary<string, string> saved = new Dictionary<string, string>();
+
+        public EnvScope(params string[] keyValues)
+        {
+            for (int i = 0; i + 1 < keyValues.Length; i += 2)
+                Set(keyValues[i], keyValues[i + 1]);
+        }
+
+        /// <summary>Sets (or with null removes) a variable; the first value seen is what gets restored.</summary>
+        public void Set(string key, string value)
+        {
+            if (!saved.ContainsKey(key))
+                saved[key] = Environment.GetEnvironmentVariable(key);
+            Environment.SetEnvironmentVariable(key, value);
+        }
+
+        public void Dispose()
+        {
+            foreach (KeyValuePair<string, string> kv in saved)
+                Environment.SetEnvironmentVariable(kv.Key, kv.Value);
+        }
+    }
+
+    /// <summary>Captures MasterServer.Logger lines and restores the previous logger on dispose.</summary>
+    public sealed class LogCapture : IDisposable
+    {
+        private readonly Action<string> previous;
+        private readonly List<string> lines = new List<string>();
+
+        public LogCapture()
+        {
+            previous = MasterServer.Logger;
+            MasterServer.Logger = delegate(string m) { lock (lines) lines.Add(m); };
+        }
+
+        public List<string> Lines
+        {
+            get { lock (lines) return new List<string>(lines); }
+        }
+
+        public int Count(string substring)
+        {
+            int n = 0;
+            foreach (string l in Lines)
+                if (l.Contains(substring))
+                    n++;
+            return n;
+        }
+
+        public bool Any(string substring)
+        {
+            return Count(substring) > 0;
+        }
+
+        public string Text
+        {
+            get { return string.Join("\n", Lines); }
+        }
+
+        public void Dispose()
+        {
+            MasterServer.Logger = previous;
+        }
+    }
+
+    /// <summary>Redirects Console.Out into a buffer for the scope.</summary>
     public sealed class ConsoleCapture : IDisposable
     {
         private readonly TextWriter previous;
@@ -90,6 +159,154 @@ namespace Vexillum.Acceptance.toolsconfig
     }
 
     /// <summary>One recorded HTTP request of <see cref="FakeRegistry"/>.</summary>
+    public sealed class RecordedRequest
+    {
+        public string Method;
+        public string PathAndQuery;
+        public string ContentType;
+        public Dictionary<string, string> Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public string Body;
+    }
+
+    /// <summary>
+    /// A local HttpListener standing in for the ntfy registry
+    /// (VEXILLUM_MASTER_URL). Records every request; answers GETs with
+    /// <see cref="FeedBody"/> and POSTs with <see cref="PostStatus"/>.
+    /// </summary>
+    public sealed class FakeRegistry : IDisposable
+    {
+        private readonly HttpListener listener;
+        private readonly Thread thread;
+        private readonly List<RecordedRequest> requests = new List<RecordedRequest>();
+        private volatile bool stopped;
+
+        public int Port { get; private set; }
+        public string Url { get { return "http://127.0.0.1:" + Port; } }
+        /// <summary>Body returned for GET requests (the ntfy json feed).</summary>
+        public volatile string FeedBody = "";
+        /// <summary>Status code returned for POST requests.</summary>
+        public volatile int PostStatus = 200;
+
+        public FakeRegistry()
+        {
+            Port = FreePort.Tcp();
+            listener = new HttpListener();
+            listener.Prefixes.Add("http://127.0.0.1:" + Port + "/");
+            listener.Start();
+            thread = new Thread(Loop);
+            thread.IsBackground = true;
+            thread.Name = "FakeRegistry";
+            thread.Start();
+        }
+
+        public List<RecordedRequest> Requests
+        {
+            get { lock (requests) return new List<RecordedRequest>(requests); }
+        }
+
+        private void Loop()
+        {
+            while (!stopped)
+            {
+                HttpListenerContext ctx;
+                try { ctx = listener.GetContext(); }
+                catch (Exception) { return; }
+                try
+                {
+                    RecordedRequest r = new RecordedRequest();
+                    r.Method = ctx.Request.HttpMethod;
+                    r.PathAndQuery = ctx.Request.Url.PathAndQuery;
+                    r.ContentType = ctx.Request.ContentType;
+                    foreach (string k in ctx.Request.Headers.AllKeys)
+                        r.Headers[k] = ctx.Request.Headers[k];
+                    using (StreamReader sr = new StreamReader(ctx.Request.InputStream, Encoding.UTF8))
+                        r.Body = sr.ReadToEnd();
+                    lock (requests) requests.Add(r);
+
+                    byte[] body;
+                    if (r.Method == "POST")
+                    {
+                        ctx.Response.StatusCode = PostStatus;
+                        body = Encoding.UTF8.GetBytes("{}");
+                    }
+                    else
+                    {
+                        ctx.Response.StatusCode = 200;
+                        body = Encoding.UTF8.GetBytes(FeedBody);
+                    }
+                    ctx.Response.ContentType = "application/json";
+                    ctx.Response.ContentLength64 = body.Length;
+                    ctx.Response.OutputStream.Write(body, 0, body.Length);
+                    ctx.Response.Close();
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+
+        public void Dispose()
+        {
+            stopped = true;
+            try { listener.Stop(); listener.Close(); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>
+    /// A TCP endpoint that speaks the status probe: reads one byte and answers
+    /// <see cref="Answer"/> (1 = ready), then closes, like ServerPlayer.SendServerStatus.
+    /// </summary>
+    public sealed class FakeStatusResponder : IDisposable
+    {
+        private readonly TcpListener listener;
+        private readonly Thread thread;
+        private volatile bool stopped;
+        public int Port { get; private set; }
+        public byte Answer = 1;
+        public int Hits;
+
+        public FakeStatusResponder()
+        {
+            listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            Port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            thread = new Thread(Loop);
+            thread.IsBackground = true;
+            thread.Start();
+        }
+
+        private void Loop()
+        {
+            while (!stopped)
+            {
+                TcpClient c;
+                try { c = listener.AcceptTcpClient(); }
+                catch (Exception) { return; }
+                try
+                {
+                    using (c)
+                    {
+                        NetworkStream s = c.GetStream();
+                        s.ReadTimeout = 2000;
+                        int b = s.ReadByte();
+                        Interlocked.Increment(ref Hits);
+                        if (b == 255)
+                            s.WriteByte(Answer);
+                        s.Flush();
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
+
+        public void Dispose()
+        {
+            stopped = true;
+            try { listener.Stop(); } catch (Exception) { }
+        }
+    }
+
+    /// <summary>Reflection helpers for private statics and internal types.</summary>
     public static class Reflect
     {
         public static object GetStatic(Type t, string field)
@@ -253,4 +470,22 @@ namespace Vexillum.Acceptance.toolsconfig
     /// given (later calls only replace the payload), so every test that
     /// starts or listens for the in-process beacon must use this port.
     /// </summary>
+    public static class BeaconPort
+    {
+        private static int port;
+        private static readonly object sync = new object();
+
+        public static int Value
+        {
+            get
+            {
+                lock (sync)
+                {
+                    if (port == 0)
+                        port = FreePort.Udp();
+                    return port;
+                }
+            }
+        }
+    }
 }
